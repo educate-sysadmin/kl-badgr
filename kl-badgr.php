@@ -53,7 +53,7 @@ function kl_badgr_get_badgees($token, $entity_id) {
 	$data = curl_exec($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	curl_close($ch);
-	if ($httpcode !== 200 || !$data || strpos($data, '"success":true') === false) { //?
+	if ($httpcode !== 200 || !$data || strpos($data, '"success":true') === false) { //?	
 		return false;		
 	}
 
@@ -67,6 +67,8 @@ function kl_badgr_get_badgees($token, $entity_id) {
 		  if ($key == 'entityId') {			
 			$recipients[$count] = array();
 			$recipients[$count]['entityId'] = $val;
+			// add URL
+         	$recipients[$count]['URL'] = kl_badgr_get_badge_url($entity_id);
 		  }
 		  if ($key == 'image') {			
 			$recipients[$count]['image'] = $val;
@@ -92,11 +94,66 @@ function kl_badgr_get_badges() {
 	return explode(",",get_option('klbadgr_badges'));
 }
 
-/* form to query by email if necessary */
-function kl_badgr_form() {
-	return "FORM";
+/* get badge criteria URL */
+// TODO: API, HACK uses options currently
+function kl_badgr_get_badge_url($badge) {
+    $badge_urls = json_decode(get_option('klbadgr_urls'),true);
+    return $badge_urls[$badge];
 }
 
+/* form to query by email if necessary */
+function kl_badgr_form() {
+    $return = '';
+    $return .= '<div class="kl_badgr kl_badgr_search">'."\n";
+    $return .= '<h2>Search</h2>';
+    $return .= '<form method="post">'."\n";    
+	$return .= '<label for = "email">Email:</label>&nbsp;<input type = "text" id="email" name = "email" value="" size="40"/>'."\n";
+	$return .= '<br/> OR <br/>';
+	$return .= '<label for = "entity">Award id (entity id)</label>:&nbsp;<input type = "text" id="entity" name = "entity" value="" size="40"/>'."\n";	    
+    //$return .= wp_nonce_field('kl_badgr','kl_badgr');     // TODO
+    $return .= '<br/>'."\n";
+	$return .= '<p><input type = "submit" name = "kl_badgr" value="Search"></p>'."\n";
+    $return .= '</form>'."\n";    
+    $return .= '<div>'."\n";     
+    
+	return $return;
+}
+
+/* return html to output a badge award */
+function kl_badge_award_display($badge_award) {
+    $return = '';
+    $return .= '<table class="kl_badgr">'."\n";
+    $return .= '<thead>'."\n";    
+    $return .= '<tr>'.'<th>'.'Badge'.'</th>'.'<th>'.'Details'.'</th>'.'</tr>'."\n";    
+    $return .= '</thead>'."\n";    
+    $return .= '<tbody>'."\n"; 
+    $return .= '<tr>'."\n";
+    $return .= '<td class="kl_badgr kl_badgr_badge">'."\n"; 
+    $return .= '<a href = "'.$badge_award['image'].'">'."\n";
+    $return .= '<img src = "'.$badge_award['image'].'" class="kl_badgr kl_badgr_img"/>'."\n";   
+    $return .= '</a>'."\n";
+    $return .= '</td>'."\n";    
+    $return .= '<td class="kl_badgr kl_badgr_details" style="vertical-align: top;">'."\n";
+    foreach ($badge_award as $key => $val) {    
+        $return .= '<p class = "kl_badgr kl_badgr_'.$key.'">';
+        $return .= '<strong>'.ucfirst($key).'</strong>'.': ';
+        if ($key == 'image' || $key == 'URL') {
+            $return .= '<a href = "'.$val.'">'."\n";        
+        }        
+        $return .= $val;
+        if ($key == 'image' || $key == 'URL') {
+            $return .= '</a>'."\n";
+        }        
+        $return .= "\n";
+        $return .= '</p>';
+    }
+    $return .= '</td>'."\n";    
+    $return .= '</tr>'."\n";        
+    $return .= '</tbody>'."\n";        
+    $return .= '</table>'."\n";    
+    
+    return $return;
+}
 
 
 function kl_badgr($atts, $content = null) {
@@ -113,50 +170,90 @@ function kl_badgr($atts, $content = null) {
 	
 	// resolve requests
 	$valid = true;
-	$badges = array(); // filter by badges or show all
-	$badgee = null; // filter by recipient
+	$badges_request = array(); // filter by badges or show all
+	$email_request = null; // filter by recipient
+	$entity_request = null; // show specific award
+	// check nonce for form posting
+	/*
+	if (isset($_POST['kl_badgr'])) {
+	    if (!wp_verify_nonce($_REQUEST['kl_badgr'],'kl_badgr')) {
+	        $valid = false;
+	        return '<p>'.'Invalid request: nonce'.'</p>';
+	    }
+	}
+	
+	*/
 	if (isset($_REQUEST['badges'])) { 
 		if (preg_match("/[A-Za-z0-9,]+/",$_REQUEST['badges']) == 0) {
 			$valid = false;	
+			return '<p>'.'Invalid request: badges'.'</p>';
+		} 
+	} else {
+	    $badges_request = kl_badgr_get_badges(); 
+	}
+	if (isset($_REQUEST['email'])  && $_REQUEST['email'] != "") { 
+		if (preg_match("/[A-Za-z0-9@._+]+/",$_REQUEST['email']) == 0) {
+			$valid = false;	
+			return '<p>'.'Invalid request: email'.'</p>';
 		} 
 	}
-	if (isset($_REQUEST['badgee'])) { 
-		if (preg_match("/[A-Za-z0-9@\.\_\+]+/",$_REQUEST['badgees']) == 0) {
+	if (isset($_REQUEST['entity']) && $_REQUEST['entity'] != "") { 
+		if (preg_match("/[A-Za-z0-9,]+/",$_REQUEST['entity']) == 0) {
 			$valid = false;	
+            return '<p>'.'Invalid request: entity'.'</p>';			
 		} 
-	}	
-	$allbadges = kl_badgr_get_badges(); //array('ZaVRytPWT72xw3zNRz9xJg');
-	var_dump($allbadges);
+	}			
+	$allbadges = kl_badgr_get_badges(); //c;
 	if (isset($_REQUEST['badges'])) {
-		$badges = explode(",",$_REQUEST['badges']);
-		foreach ($badges as $badge) {
+		$badges_request = explode(",",$_REQUEST['badges']);
+		foreach ($badges_request as $badge) {
 			if (!in_array($badge, $allbadges)) {
 				$valid = false;
 			}
 		}
 	} else {
-		$badges = $allbadges;
+		$badges_request = $allbadges;
 	}
 	
 	if (!$valid) {
 		return '<p>'.'Invalid request'.'</p>';
-	}
+	}	
+	$entity_request = (isset($_REQUEST['entity']) && $_REQUEST['entity'] != "")?$_REQUEST['entity']:null;
+	$email_request = (isset($_REQUEST['email']) && $_REQUEST['email'] != "")?$_REQUEST['email']:null;	
 	
-	$badgee = (isset($_REQUEST['badgee']))?$_REQUEST['badgee']:null;
-	
-	if (!isset($badgee)) {
-		// form ...
-	}
-    
-	// query awards
-	$entity_id = 'ZaVRytPWT72xw3zNRz9xJg';	
-	$recipients = kl_badgr_get_badgees($token, $entity_id);
-	if (!$recipients) {
-		return "<p>Error querying Badgr.</p>";
-	}
-	
-	print_r($recipients);
+	//if (!isset($email_request) && !isset($entity_request)) {
+        $output .= '<hr>';	
+        $output .= kl_badgr_form(); 
+        $output .= '<br/>';
+        $output .= '<hr>';
+	//}
 
+    $output .= '<h2>Awards</h2>';
+    // query badges and awards	
+    $awards = array();
+	foreach ($badges_request as $badge) {
+	    $awards[$badge] = kl_badgr_get_badgees($token, $badge);
+	}
+	
+	// select and output
+	foreach ($awards as $badge => $badge_awards) {
+	    foreach ($badge_awards as $badge_award) {
+            if ($entity_request) {
+                if ((string) trim($badge_award['entityId']) != (string) trim($entity_request)) {
+                    continue;
+                }                
+            }	        
+            if ($email_request) {
+                if ($badge_award['email'] !== $email_request) {
+                    continue;
+                }                
+            }
+            // else
+            $output .= kl_badge_award_display($badge_award);
+	    }	
+    }
+    $output .= '<hr>';
+    
 	return $output;
 }
 

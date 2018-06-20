@@ -22,6 +22,7 @@ function register_klbadgr_plugin_settings() {
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_token' );	    
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_credentials' );	    
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_badges' );	    
+    register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_urls' );
 }
 
 function klbadgr_plugin_settings_page() {
@@ -37,7 +38,7 @@ function klbadgr_plugin_settings_page() {
         <tr valign="top">
         <th scope="row">Badgr Token</th>
         <td>
-        	<input type="text" name="klbadgr_token" value="<?php echo esc_attr( get_option('klbadgr_token') ); ?>"  />
+        	<input type="text" name="klbadgr_token" value="<?php echo esc_attr( get_option('klbadgr_token') ); ?>" size="40" />
         	<p><small>Badgr API Token for authorisation.</small></p>
         </td>
         </tr>        
@@ -45,7 +46,7 @@ function klbadgr_plugin_settings_page() {
         <tr valign="top">
         <th scope="row">Badgr credentials</th>
         <td>
-        	<input type="text" name="klbadgr_credentials" value="<?php echo esc_attr( get_option('klbadgr_credentials') ); ?>"  />
+        	<input type="text" name="klbadgr_credentials" value="<?php echo esc_attr( get_option('klbadgr_credentials') ); ?>" size="60" />
         	<p><small>Badgr credential string e.g. username={username}&password={password} to use if Token not set.</small></p>
         </td>
         </tr>        
@@ -53,10 +54,21 @@ function klbadgr_plugin_settings_page() {
         <tr valign="top">
         <th scope="row">Badge ids</th>
         <td>
-        	<input type="text" name="klbadgr_badges" value="<?php echo esc_attr( get_option('klbadgr_badges') ); ?>"  />
+        	<input type="text" name="klbadgr_badges" value="<?php echo esc_attr( get_option('klbadgr_badges') ); ?>" size="90%"  />
         	<p><small>Badge entity_ids (comma-delimited). [Hard-coded instead of using API].</small></p>
         </td>
-        </tr>                        
+        </tr>
+        s
+        <tr valign="top">
+        <th scope="row">Badge URLs</th>
+        <td>
+        	<textarea style="width: 100%; height: 10em;" name="klbadgr_urls"><?php echo esc_attr( get_option('klbadgr_urls') ); ?></textarea>
+        	<p><small>Badge/URL mappings for criteria in JSON format.<br/>Example:<br/>{
+"ZaVRytPWT72xw3zNRz9xJg": "https://educate.london/test-badge/",
+"FQLl1REwQ7qiOSzUKYg0rA": "https://educate.london/test-badge-2/"
+}<br/> [Hard-coded instead of using API].</small></p>
+        </td>
+        </tr>
                             
     </table>
     
