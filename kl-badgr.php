@@ -114,7 +114,7 @@ function kl_badgr_form() {
     $return .= '<br/>'."\n";
 	$return .= '<p><input type = "submit" name = "kl_badgr" value="Search"></p>'."\n";
     $return .= '</form>'."\n";    
-    $return .= '<div>'."\n";     
+    $return .= '</div>'."\n";     
     
 	return $return;
 }
@@ -222,10 +222,7 @@ function kl_badgr($atts, $content = null) {
 	$email_request = (isset($_REQUEST['email']) && $_REQUEST['email'] != "")?$_REQUEST['email']:null;	
 	
 	//if (!isset($email_request) && !isset($entity_request)) {
-        $output .= '<hr>';	
         $output .= kl_badgr_form(); 
-        $output .= '<br/>';
-        $output .= '<hr>';
 	//}
 
     $output .= '<h2>Awards</h2>';
@@ -252,7 +249,6 @@ function kl_badgr($atts, $content = null) {
             $output .= kl_badge_award_display($badge_award);
 	    }	
     }
-    $output .= '<hr>';
     
 	return $output;
 }
