@@ -11,6 +11,18 @@ License: GPL2
 
 require_once('kl-badgr-options.php');
 
+$kl_badgr_options = array(
+    'v1_image_url' => 'https://api.badgr.io/public/assertions/{assertion}/baked?v=1_1',
+    'v2_image_url' => 'https://api.badgr.io/public/assertions/{assertion}/baked?v=2_0',    
+    'pretty_keys' => array(
+        'entityId' => 'Award Id',
+        'URL' => 'Criteria',
+        'image' => 'Badge image',
+        'issuedOn' => 'Issued ',
+        'Revoked' => 'Revoked',
+    ),
+);
+
 function kl_badgr_install() {
 }
 
@@ -71,7 +83,7 @@ function kl_badgr_get_badgees($token, $entity_id) {
          	$recipients[$count]['URL'] = kl_badgr_get_badge_url($entity_id);
 		  }
 		  if ($key == 'image') {			
-			$recipients[$count]['image'] = $val;
+			$recipients[$count]['image'] = $val; // not currently used
 		  }
 		  if ($key == 'issuedOn') {			
 			$recipients[$count]['issuedOn'] = $val;
@@ -108,8 +120,8 @@ function kl_badgr_form() {
     $return .= '<h2>Search</h2>';
     $return .= '<form method="post">'."\n";    
 	$return .= '<label for = "email">Email:</label>&nbsp;<input type = "text" id="email" name = "email" value="" size="40"/>'."\n";
-	$return .= '<br/> OR <br/>';
-	$return .= '<label for = "entity">Award id (entity id)</label>:&nbsp;<input type = "text" id="entity" name = "entity" value="" size="40"/>'."\n";	    
+	$return .= '<br/> OR <br/><br/>';
+	$return .= '<label for = "entity">Award id:</label>&nbsp;<input type = "text" id="entity" name = "entity" value="" size="40"/>'."\n";	    
     //$return .= wp_nonce_field('kl_badgr','kl_badgr');     // TODO
     $return .= '<br/>'."\n";
 	$return .= '<p><input type = "submit" name = "kl_badgr" value="Search"></p>'."\n";
@@ -121,6 +133,9 @@ function kl_badgr_form() {
 
 /* return html to output a badge award */
 function kl_badge_award_display($badge_award) {
+
+    global $kl_badgr_options;
+
     $return = '';
     $return .= '<table class="kl_badgr">'."\n";
     $return .= '<thead>'."\n";    
@@ -129,19 +144,58 @@ function kl_badge_award_display($badge_award) {
     $return .= '<tbody>'."\n"; 
     $return .= '<tr>'."\n";
     $return .= '<td class="kl_badgr kl_badgr_badge">'."\n"; 
+    /*
     $return .= '<a href = "'.$badge_award['image'].'">'."\n";
     $return .= '<img src = "'.$badge_award['image'].'" class="kl_badgr kl_badgr_img"/>'."\n";   
     $return .= '</a>'."\n";
+    */
+    $link2 = str_replace('{assertion}',$badge_award['entityId'],$kl_badgr_options['v2_image_url']);
+    $return .= '<a href = "'.$link2.'">'."\n";
+    $return .= '<img src = "'.$link2.'" class="kl_badgr kl_badgr_img"/>'."\n";   
+    $return .= '</a>'."\n";
+    $return .= '<p class="version version2">(Version 2)</p>';
+    $return .= '<br/>';
+    $link1 = str_replace('{assertion}',$badge_award['entityId'],$kl_badgr_options['v1_image_url']);
+    $return .= '<a href = "'.$link1.'">'."\n";
+    $return .= '<img src = "'.$link1.'" class="kl_badgr kl_badgr_img"/>'."\n";   
+    $return .= '</a>'."\n";
+    $return .= '<p class="version version1">(Version 1)</p>';    
+    
     $return .= '</td>'."\n";    
     $return .= '<td class="kl_badgr kl_badgr_details" style="vertical-align: top;">'."\n";
     foreach ($badge_award as $key => $val) {    
         $return .= '<p class = "kl_badgr kl_badgr_'.$key.'">';
-        $return .= '<strong>'.ucfirst($key).'</strong>'.': ';
-        if ($key == 'image' || $key == 'URL') {
+        if (isset($kl_badgr_options['pretty_keys'][$key])) {
+            $pretty_key = $kl_badgr_options['pretty_keys'][$key];
+        } else {
+            $pretty_key = ucfirst($key);
+        }
+        $return .= '<strong>'.$pretty_key.'</strong>'.': ';        
+        if ($key == 'URL') {
             $return .= '<a href = "'.$val.'">'."\n";        
-        }        
-        $return .= $val;
-        if ($key == 'image' || $key == 'URL') {
+        }
+        if ($key == 'image') { 
+            // modify image links
+            $return .= '<br/>';
+            $return .= 'Version 2: ';
+            $return .= '<a href = "'.$link2.'">'."\n";
+            $return .= $link2."\n";   
+            $return .= '</a>'."\n";
+            $return .= '<br/>';
+            $return .= '<br/>';
+            $return .= 'Version 1: ';
+            $return .= '<a href = "'.$link1.'">'."\n";
+            $return .= $link1."\n";   
+            $return .= '</a>'."\n";                        
+        } else if ($key == 'revoked') { 
+            $return .= $val==""?"Not revoked":$revoked;
+        } else if ($key == 'issuedOn') { 
+            $return .= substr($val,0,10);
+        } else {
+            $return .= $val;
+        }
+        
+        if ($key == 'URL') {
             $return .= '</a>'."\n";
         }        
         $return .= "\n";
@@ -157,6 +211,8 @@ function kl_badge_award_display($badge_award) {
 
 
 function kl_badgr($atts, $content = null) {
+
+    $output = '';
 	
 	/* get authorisation token if necessary */
 	$token = get_option('klbadgr_token');

@@ -22,7 +22,7 @@ function register_klbadgr_plugin_settings() {
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_token' );	    
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_credentials' );	    
     register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_badges' );	    
-    register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_urls' );
+    register_setting( 'klbadgr-plugin-settings-group', 'klbadgr_admin_roles' );
 }
 
 function klbadgr_plugin_settings_page() {
@@ -58,7 +58,7 @@ function klbadgr_plugin_settings_page() {
         	<p><small>Badge entity_ids (comma-delimited). [Hard-coded instead of using API].</small></p>
         </td>
         </tr>
-        s
+        
         <tr valign="top">
         <th scope="row">Badge URLs</th>
         <td>
@@ -69,6 +69,15 @@ function klbadgr_plugin_settings_page() {
 }<br/> [Hard-coded instead of using API].</small></p>
         </td>
         </tr>
+
+        <tr valign="top">
+        <th scope="row">Admin roles</th>
+        <td>
+        	<input type="text" name="klbadgr_admin_roles" value="<?php echo esc_attr( get_option('klbadgr_admin_roles') ); ?>" size="90%"  />
+        	<p><small>Roles that have admin-level permissions, e.g. to see a full listing of awards. Comma-delimited.</small></p>
+        </td>
+        </tr>
+
                             
     </table>
     
