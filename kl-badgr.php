@@ -120,7 +120,7 @@ function kl_badgr_form() {
     $return .= '<h2>Search</h2>';
     $return .= '<form method="post">'."\n";    
 	$return .= '<label for = "email">Email:</label>&nbsp;<input type = "text" id="email" name = "email" value="" size="40"/>'."\n";
-	$return .= '<br/> OR <br/><br/>';
+	$return .= '<br/> OR <br/>';
 	$return .= '<label for = "entity">Award id:</label>&nbsp;<input type = "text" id="entity" name = "entity" value="" size="40"/>'."\n";	    
     //$return .= wp_nonce_field('kl_badgr','kl_badgr');     // TODO
     $return .= '<br/>'."\n";
