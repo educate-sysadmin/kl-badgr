@@ -240,6 +240,7 @@ function kl_badgr($atts, $content = null) {
 	
 	*/
 	if (isset($_REQUEST['badges'])) { 
+	    $_REQUEST['badges'] = trim($_REQUEST['badges']);
 		if (preg_match("/[A-Za-z0-9,]+/",$_REQUEST['badges']) == 0) {
 			$valid = false;	
 			return '<p>'.'Invalid request: badges'.'</p>';
@@ -248,18 +249,21 @@ function kl_badgr($atts, $content = null) {
 	    $badges_request = kl_badgr_get_badges(); 
 	}
 	if (isset($_REQUEST['email'])  && $_REQUEST['email'] != "") { 
+    	$_REQUEST['email'] = trim($_REQUEST['email']);
 		if (preg_match("/[A-Za-z0-9@._+]+/",$_REQUEST['email']) == 0) {
 			$valid = false;	
 			return '<p>'.'Invalid request: email'.'</p>';
 		} 
 	}
 	if (isset($_REQUEST['entity']) && $_REQUEST['entity'] != "") { 
+    	$_REQUEST['entity'] = trim($_REQUEST['entity']);
 		if (preg_match("/[A-Za-z0-9,]+/",$_REQUEST['entity']) == 0) {
 			$valid = false;	
             return '<p>'.'Invalid request: entity'.'</p>';			
 		} 
-	}			
-	$allbadges = kl_badgr_get_badges(); //c;
+	}
+	
+	$allbadges = kl_badgr_get_badges(); 
 	if (isset($_REQUEST['badges'])) {
 		$badges_request = explode(",",$_REQUEST['badges']);
 		foreach ($badges_request as $badge) {
@@ -274,12 +278,31 @@ function kl_badgr($atts, $content = null) {
 	if (!$valid) {
 		return '<p>'.'Invalid request'.'</p>';
 	}	
-	$entity_request = (isset($_REQUEST['entity']) && $_REQUEST['entity'] != "")?$_REQUEST['entity']:null;
-	$email_request = (isset($_REQUEST['email']) && $_REQUEST['email'] != "")?$_REQUEST['email']:null;	
+	$entity_request = (isset($_REQUEST['entity']) && $_REQUEST['entity'] != "")?trim($_REQUEST['entity']):null;
+	$email_request = (isset($_REQUEST['email']) && $_REQUEST['email'] != "")?trim($_REQUEST['email']):null;	
 	
 	//if (!isset($email_request) && !isset($entity_request)) {
         $output .= kl_badgr_form(); 
 	//}
+	
+	// check break for inadequate role permissions 
+	if (get_option('klbadgr_admin_roles') && get_option('klbadgr_admin_roles') != '') {
+	    if (!$entity_request && ! $email_request) {
+	        $user_roles = KLUtils::get_user_roles();
+	        $allowed_roles = explode(",",get_option('klbadgr_admin_roles'));
+	        $allowed = false;
+	        foreach ($allowed_roles as $allowed_role) {
+	            if (in_array(trim($allowed_role), $user_roles)) {
+	                $allowed = true;
+	                break;
+	            }
+	        }
+	        if (!$allowed) {
+    	        //$output .= '<p>'.'Use the search facility to display awards'.'</p>';
+	            return $output;
+	        }
+	    }	
+    }
 
     $output .= '<h2>Awards</h2>';
     // query badges and awards	
